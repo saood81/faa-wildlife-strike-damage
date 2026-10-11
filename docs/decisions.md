@@ -49,6 +49,7 @@ reports. This motivates experiment E1 (missingness indicators vs plain imputatio
 | M3 | No resampling (no SMOTE/undersampling); `class_weight` is a tuned option instead | Resampling distorts probabilities; keeping the real class mix keeps them interpretable. The grid lets each model choose. |
 | M4 | Decision threshold = the cut-off maximising F1 on 2024 | Chosen on data the model never trained on and that is not the test set. |
 | M5 | SVM (RBF) trained on a stratified 15,000-row subsample; probabilities via Platt scaling (3-fold) | SVC cost grows with rows squared; 71,509 rows is impractical on a laptop. Stated as a limitation. |
+| M7 | Grid-edge check: RF `min_samples_leaf`=1 scored lower in CV (0.476 vs 0.484), so 3 stands. SVM grid widened to gamma down to 0.001 and C up to 3: CV rose 0.384 -> 0.412, test PR-AUC 0.325 -> 0.367. Best gamma (0.001) is again the smallest tried, but CV is flat across the low-gamma end (0.411 at gamma 0.003), i.e. the SVM settles on a near-linear boundary. | Hyper-parameters at the edge of a grid may be sub-optimal; checked rather than assumed. |
 | M6 | Feature set A only for the main comparison; set B is experiment E4 with the same tuned settings | Holding settings fixed isolates the effect of the extra features. |
 
 ## Evaluation (04_evaluate.py)
@@ -59,8 +60,22 @@ reports. This motivates experiment E1 (missingness indicators vs plain imputatio
 | V3 | Permutation importance on the test set, scored by PR-AUC, 5 repeats | Model-agnostic; measures reliance on each original input column. |
 
 ## Findings to discuss
+- (Updated after M7: SVM test PR-AUC 0.367.)
 - RF best on test: PR-AUC 0.413 (95% CI 0.381-0.442), about 7.5x the no-skill level (0.055). Its lead over every other model is outside chance (paired CIs exclude 0).
 - CV PR-AUC (2016-23) is higher than 2024 and 2025-26 for every model. Part of this is mechanical: PR-AUC's floor equals the damage rate, which fell from 7.4% to 5.5%. Part is drift.
 - Models over-predict on 2025-26 (RF mean probability 0.064 vs actual 0.055), as expected from the falling damage rate.
 - SPECIES dominates the RF (PR-AUC drop 0.20). Checked: the signal is physical, not a reporting artefact. White-tailed deer 85% damaging, turkey vulture 57%, Canada goose 53% (train years), while a simple "species unknown" flag alone scores PR-AUC 0.065, barely above no-skill.
 - GNB is poorly calibrated (Brier 0.086, threshold 0.99): its independence assumption is violated by correlated inputs (mass, engine type, aircraft), which pushes probabilities to 0 or 1.
+
+## Experiments (05_experiments.py)
+All six models refitted with their tuned settings; one design element changed per experiment.
+Changes in test PR-AUC are paired-bootstrap 95% CIs (same test rows). RF numbers quoted.
+
+| Exp | Change | Result | Interpretation |
+|---|---|---|---|
+| E1a | Missingness flags -> plain imputation | RF +0.002 (CI -0.003 to +0.007); LR +0.008 (CI +0.004 to +0.012) | Flags add nothing; for LR/GNB they slightly hurt. The models do not depend on *whether* fields were filled in. |
+| E1b | Model sees ONLY which fields are blank | PR-AUC 0.08-0.10 (no-skill 0.055), ROC-AUC 0.58-0.64 | Report completeness carries weak real signal (supports the MNAR hypothesis) but it is largely redundant with the actual values. |
+| E2 | + 12,079 unverified "no damage" training rows | RF -0.004 (CI -0.009 to +0.001); DT -0.017 (CI -0.031 to -0.004); mean prediction falls (RF 0.064 -> 0.057) | Unverified labels slightly hurt ranking (significant for LR, GNB, DT) and shift probabilities down. Verified-only training is justified. |
+| E3 | Random split of all years instead of temporal | RF PR-AUC 0.465 vs 0.413; ROC-AUC 0.861 vs 0.839; all six models higher | A random split overstates future performance. Part of the PR-AUC gap is the higher damage rate in the random test set (6.8% vs 5.5%), but ROC-AUC, which ignores the damage rate, also drops under the temporal split, so drift is real. |
+| E3b | Calibration by test year (RF) | 2025: predicted 6.4% vs actual 5.6%; 2026: 6.4% vs 5.3% | Over-prediction grows as the damage rate keeps falling; recalibration on recent data would be needed in deployment. |
+| E4 | Feature set B (+ strike location, ingestion) | RF 0.491 (+0.078, CI +0.065 to +0.091); LR +0.070; GNB no change | Where the animal hit matters a lot jointly, although each flag alone is weak (single-feature AUC <= 0.60). Valid only for post-flight inspection triage. |
