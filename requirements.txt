@@ -1,4 +1,5 @@
-# Tested with Python 3.13 (pandas 3.0 and 2.3); minimum versions below.
+# Tested with Python 3.13 (pandas 3.0, scikit-learn 1.9) and Python 3.14 on Windows
+# (pandas 3.0, scikit-learn 1.8). Minimum versions below.
 pandas>=2.2
 numpy>=1.26
 scikit-learn>=1.6
