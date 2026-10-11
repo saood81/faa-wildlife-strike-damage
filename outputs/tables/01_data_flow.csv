@@ -1,0 +1,6 @@
+step,rows,positives
+1. Raw extract 2016-2026,185290,7512
+2. Aircraft known (AC_MASS present),126180,7437
+3. Contradictory labels removed (n=9),126171,7431
+4. Verified-label analytic set (main experiments),108935,7431
+   + unverified negatives (used only in experiment E2),126171,7431

@@ -1,0 +1,6 @@
+# Tested with Python 3.13 (pandas 3.0 and 2.3); minimum versions below.
+pandas>=2.2
+numpy>=1.26
+scikit-learn>=1.6
+scipy>=1.11
+matplotlib>=3.8
