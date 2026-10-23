@@ -21,6 +21,7 @@ python src/02_eda.py          # figures 1-3                             (~10 s)
 python src/03_models.py       # tune + fit the six models               (~25 min on 2 cores)
 python src/04_evaluate.py     # test metrics, CIs, figures 4-6          (~5 min)
 python src/05_experiments.py  # experiments E1-E4, figure 7              (~10 min)
+python src/06_report_figures.py # report Figure 2, balanced-accuracy table (~30 s)
 ```
 Every random step uses the seed in `src/config.py` (`RANDOM_STATE = 42`).
 
@@ -34,6 +35,7 @@ Every random step uses the seed in `src/config.py` (`RANDOM_STATE = 42`).
 | `src/03_models.py` | Grid search with 5-fold CV, refit, threshold chosen on 2024 |
 | `src/04_evaluate.py` | Test-set metrics with bootstrap 95% CIs, PR curves, calibration, permutation importance |
 | `src/05_experiments.py` | Experiments E1-E4: missingness, label noise, split design, feature set B |
+| `src/06_report_figures.py` | Report Figure 2 (PR + reliability) and balanced accuracy for comparison with prior work |
 | `outputs/predictions/` | Predicted damage probabilities for 2024-26 |
 | `outputs/tables/` | Audit and results tables (CSV) |
 | `outputs/figures/` | Figures used in the report |

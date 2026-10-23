@@ -1,0 +1,14 @@
+model,threshold_rule,threshold,balanced_acc,recall,specificity,precision,accuracy,flagged_per_1000,balanced_acc_ci
+LR,Youden J on 2024,0.065,0.7568,0.6751,0.8386,0.1948,0.8297,189.4829,"[0.744, 0.769]"
+LR,oracle: Youden J on test (reference only),0.0635,0.7584,0.6835,0.8333,0.1917,0.8251,194.9588,-
+GNB,Youden J on 2024,0.0001,0.7383,0.6758,0.8008,0.164,0.794,225.2644,"[0.725, 0.751]"
+GNB,oracle: Youden J on test (reference only),0.0001,0.7387,0.6804,0.7969,0.1623,0.7906,229.1519,-
+KNN,Youden J on 2024,0.0681,0.7406,0.6468,0.8343,0.1842,0.8241,191.991,"[0.727, 0.753]"
+KNN,oracle: Youden J on test (reference only),0.0646,0.7425,0.6667,0.8183,0.175,0.81,208.2515,-
+SVM,Youden J on 2024,0.0856,0.7428,0.5979,0.8878,0.2355,0.8719,138.7786,"[0.729, 0.756]"
+SVM,oracle: Youden J on test (reference only),0.0507,0.7615,0.7011,0.822,0.1855,0.8154,206.6212,-
+DT,Youden J on 2024,0.0751,0.7545,0.6697,0.8393,0.1942,0.83,188.5215,"[0.741, 0.767]"
+DT,oracle: Youden J on test (reference only),0.0744,0.7553,0.6728,0.8378,0.1934,0.8287,190.1517,-
+RF,Youden J on 2024,0.0842,0.7684,0.6873,0.8494,0.2088,0.8405,179.9523,"[0.755, 0.780]"
+RF,oracle: Youden J on test (reference only),0.0729,0.7744,0.7271,0.8217,0.1908,0.8165,208.3351,-
+All 'no damage',trivial rule,,0.5,0.0,1.0,,0.9453,0.0,
