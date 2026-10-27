@@ -1,0 +1,2 @@
+model,best_params,cv_pr_auc_mean,cv_pr_auc_sd,valid_pr_auc,threshold_from_valid,boosting_iterations,train_rows,grid_size,minutes
+HGB,"{'class_weight': None, 'learning_rate': 0.02, 'max_leaf_nodes': 31, 'min_samples_leaf': 100}",0.4858,0.0189,0.4319,0.2076,405,71509,36,7.1

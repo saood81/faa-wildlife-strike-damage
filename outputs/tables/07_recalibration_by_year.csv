@@ -1,0 +1,9 @@
+model,method,year,mean_pred,observed
+RF,none,2025,0.064,0.0556
+RF,none,2026,0.0636,0.0528
+RF,prior_shift,2025,0.0541,0.0556
+RF,prior_shift,2026,0.0536,0.0528
+RF,platt,2025,0.0571,0.0556
+RF,platt,2026,0.0565,0.0528
+RF,isotonic,2025,0.057,0.0556
+RF,isotonic,2026,0.0564,0.0528

@@ -50,6 +50,8 @@ reports. This motivates experiment E1 (missingness indicators vs plain imputatio
 | M4 | Decision threshold = the cut-off maximising F1 on 2024 | Chosen on data the model never trained on and that is not the test set. |
 | M5 | SVM (RBF) trained on a stratified 15,000-row subsample; probabilities via Platt scaling (3-fold) | SVC cost grows with rows squared; 71,509 rows is impractical on a laptop. Stated as a limitation. |
 | M7 | Grid-edge check: RF `min_samples_leaf`=1 scored lower in CV (0.476 vs 0.484), so 3 stands. SVM grid widened to gamma down to 0.001 and C up to 3: CV rose 0.384 -> 0.412, test PR-AUC 0.325 -> 0.367. Best gamma (0.001) is again the smallest tried, but CV is flat across the low-gamma end (0.411 at gamma 0.003), i.e. the SVM settles on a near-linear boundary. | Hyper-parameters at the edge of a grid may be sub-optimal; checked rather than assumed. |
+| M8 | Gradient boosting (HistGradientBoostingClassifier) added as a seventh model, same pipeline, CV and threshold rule (`06_boosting.py`) | Tree boosting is the strongest family on tabular data in recent benchmarks. First grid chose three edge values; widened grid again chose edges, but CV PR-AUC is flat across them (max differences <= 0.003 vs CV sd 0.018), so the grid was not widened further. Not included in experiments E1-E4. HGB is the only model whose results differ slightly between machines (multithreaded histogram sums; scikit-learn 1.8 vs 1.9): test PR-AUC 0.409 (committed run) vs 0.407; conclusions unchanged. |
+| M9 | Hyper-parameters tuned with stratified random 5-fold CV within 2016-23, although E3 shows random splits overstate absolute performance | CV is used only to RANK settings within one period; absolute performance is always reported on the later, temporally separate validation and test years. |
 | M6 | Feature set A only for the main comparison; set B is experiment E4 with the same tuned settings | Holding settings fixed isolates the effect of the extra features. |
 
 ## Evaluation (04_evaluate.py)
@@ -57,6 +59,8 @@ reports. This motivates experiment E1 (missingness indicators vs plain imputatio
 |---|---|---|
 | V1 | Test set 2025-26 used once, at real prevalence (5.5%) | Honest estimate of future performance. |
 | V2 | 1,000 bootstrap resamples, same resamples for every model | Gives 95% CIs and paired CIs for differences between models. |
+| V4 | Test set not used for any modelling decision. The SVM grid was widened (M7) because of the CV grid-edge check; all test results were recomputed once after the final grids were fixed | Keeps the test estimate unbiased. |
+| V5 | Recalibration (prior-shift, Platt, isotonic) fitted on 2024 only, evaluated on 2025-26 (`07_recalibration.py`); prior-shift pre-specified as primary | Over-prediction is caused by a falling damage rate (prior shift). |
 | V3 | Permutation importance on the test set, scored by PR-AUC, 5 repeats | Model-agnostic; measures reliance on each original input column. |
 
 ## Findings to discuss

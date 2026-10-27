@@ -1,0 +1,2 @@
+model,pr_auc,pr_auc_ci,roc_auc,roc_auc_ci,brier,brier_ci,recall,recall_ci,precision,precision_ci,f1,f1_ci,balanced_acc,balanced_acc_ci,pr_auc_diff_vs_RF,pr_auc_diff_vs_RF_ci,threshold,mean_predicted_prob,observed_damage_rate,balanced_acc_youden,balanced_acc_youden_ci
+HGB,0.409,"[0.379, 0.438]",0.842,"[0.829, 0.854]",0.04,"[0.038, 0.042]",0.483,"[0.454, 0.509]",0.417,"[0.391, 0.441]",0.448,"[0.424, 0.470]",0.722,"[0.708, 0.735]",-0.004,"[-0.013, 0.005]",0.208,0.0618,0.0547,0.766,"[0.753, 0.779]"
