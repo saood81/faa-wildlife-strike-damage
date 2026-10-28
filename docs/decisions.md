@@ -62,6 +62,7 @@ reports. This motivates experiment E1 (missingness indicators vs plain imputatio
 | V4 | Test set not used for any modelling decision. The SVM grid was widened (M7) because of the CV grid-edge check; all test results were recomputed once after the final grids were fixed | Keeps the test estimate unbiased. |
 | V5 | Recalibration (prior-shift, Platt, isotonic) fitted on 2024 only, evaluated on 2025-26 (`07_recalibration.py`); prior-shift pre-specified as primary | Over-prediction is caused by a falling damage rate (prior shift). |
 | V3 | Permutation importance on the test set, scored by PR-AUC, 5 repeats | Model-agnostic; measures reliance on each original input column. |
+| V6 | Species checks (`09_species_check.py`): training-years species damage rate (m-estimate, m = 20) alone scores test PR-AUC 0.325; a 'species identified' flag alone scores 0.065 (no-skill 0.055) | Separates a physical species signal from a report-completeness artefact; makes the Section 5.4 figures reproducible from the repository. |
 
 ## Findings to discuss
 - (Updated after M7: SVM test PR-AUC 0.367.)

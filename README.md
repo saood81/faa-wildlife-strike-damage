@@ -24,6 +24,7 @@ python src/05_experiments.py  # experiments E1-E4, figure 7              (~10 mi
 python src/06_boosting.py      # gradient boosting as a seventh model      (~20 min)
 python src/07_recalibration.py # recalibration fitted on 2024              (~1 min)
 python src/08_report_figures.py # report Figure 2, balanced-accuracy table (~30 s)
+python src/09_species_check.py  # species signal: physical vs reporting     (~10 s)
 ```
 Every random step uses the seed in `src/config.py` (`RANDOM_STATE = 42`).
 
@@ -40,6 +41,7 @@ Every random step uses the seed in `src/config.py` (`RANDOM_STATE = 42`).
 | `src/06_boosting.py` | HistGradientBoostingClassifier under the same protocol as the six main models |
 | `src/07_recalibration.py` | Prior-shift, Platt and isotonic recalibration fitted on 2024, evaluated on 2025-26 |
 | `src/08_report_figures.py` | Report Figure 2 (PR + reliability) and balanced accuracy for comparison with prior work |
+| `src/09_species_check.py` | Species-only and 'species identified' single-input checks (report Section 5.4, Appendix D) |
 | `outputs/predictions/` | Predicted damage probabilities for 2024-26 |
 | `outputs/tables/` | Audit and results tables (CSV) |
 | `outputs/figures/` | Figures used in the report |

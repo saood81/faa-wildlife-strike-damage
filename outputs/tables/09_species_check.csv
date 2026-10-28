@@ -1,0 +1,6 @@
+check,test_pr_auc,test_roc_auc,no_skill_pr_auc,train_rate,train_n
+species_rate,0.325,0.794,0.055,,
+identified_flag,0.065,0.578,0.055,,
+train_damage_rate: White-tailed deer,,,,0.847,222.0
+train_damage_rate: Turkey vulture,,,,0.572,416.0
+train_damage_rate: Canada goose,,,,0.526,392.0
