@@ -1,25 +1,13 @@
 """
-Step 6 - Gradient boosting as a seventh model (HistGradientBoostingClassifier).
-
-Gradient-boosted trees are widely reported as the strongest learners on
-medium-sized tabular data (Grinsztajn et al., 2022), so they are added as an
-extra comparison under exactly the same protocol as the six main models:
-  * same preprocessing pipeline (feature set A, missingness indicators,
-    cross-fitted target encoding), re-fitted inside every CV fold;
-  * grid search with stratified 5-fold CV on the training years 2016-23,
-    scored by PR-AUC;
-  * decision threshold = max-F1 cut-off on the 2024 validation year;
-  * test years 2025-26 scored once, with the same 1,000 bootstrap resamples
-    (same seed) as step 4, so the difference from the random forest gets a
-    paired 95% CI.
-Early stopping uses an internal 10% split of each training fold, never the
-validation or test years.
-
+Add HistGradientBoostingClassifier as model seven: boosted trees perform strongly on
+medium-sized tables (Grinsztajn et al., 2022).
+Follow steps 3-4: same preprocessing, stratified 5-fold PR-AUC CV, 2024 max-F1 threshold
+and bootstrap seed.
+Early stopping uses only an internal 10% split of each training fold.
 Input : data/processed/analytic.csv.gz, outputs/predictions/predictions_A.csv.gz
-Output: outputs/predictions/predictions_HGB.csv.gz
+Output: outputs/predictions/predictions_HGB.csv.gz;
         outputs/tables/06_boosting_tuning.csv, 06_boosting_test_metrics.csv
-
-Run from the repository root:  python src/06_boosting.py      (~15-25 min)
+Run from the repository root: python src/06_boosting.py (~15-25 min)
 """
 import time
 import warnings
@@ -45,9 +33,8 @@ X_te, y_te = P.get_xy(df, "test")
 
 hgb = HistGradientBoostingClassifier(max_iter=1000, early_stopping=True, validation_fraction=0.1,
                                      n_iter_no_change=20, random_state=C.RANDOM_STATE)
-# A first 2x2x2x2 grid (learning rate 0.05/0.1, leaves 15/31, min leaf 20/100)
-# selected values on three edges (0.05, 15, 100), so the grid was widened
-# towards slower, smaller, more regularised trees (grid-edge rule, decision M7).
+# The initial grid selected values on three boundaries, so widen the search towards
+# smaller, more regularised trees (decision M7).
 grid = {"model__learning_rate": [0.02, 0.05, 0.1],
         "model__max_leaf_nodes": [7, 15, 31],
         "model__min_samples_leaf": [100, 300],
@@ -90,7 +77,7 @@ pd.DataFrame({"split": ["valid"] * len(y_va) + ["test"] * len(y_te),
               "y": np.r_[y_va.values, y_te.values], "HGB": np.r_[p_va, p_te]}).to_csv(
     C.ROOT / "outputs" / "predictions" / "predictions_HGB.csv.gz", index=False, compression="gzip")
 
-# ------------------------------------------------------------ test metrics, same bootstrap as step 4
+# test metrics, same bootstrap as step 4
 pred = pd.read_csv(C.ROOT / "outputs" / "predictions" / "predictions_A.csv.gz")
 test = pred[pred["split"] == "test"].reset_index(drop=True)
 y = test["y"].to_numpy()
@@ -113,7 +100,8 @@ boot = pd.DataFrame([metric_set(y[b], p_te[b], threshold) for b in boot_idx])
 diff = np.array([average_precision_score(y[b], p_te[b]) - average_precision_score(y[b], p_rf[b])
                  for b in boot_idx])
 
-fpr, tpr, thr_roc = roc_curve(y_va, p_va)                 # Youden threshold chosen on 2024
+# Select the Youden threshold using the 2024 validation data.
+fpr, tpr, thr_roc = roc_curve(y_va, p_va)
 t_y = thr_roc[np.argmax(tpr - fpr)]
 ba_y = balanced_accuracy_score(y, p_te >= t_y)
 ba_boot = [balanced_accuracy_score(y[b], p_te[b] >= t_y) for b in boot_idx]

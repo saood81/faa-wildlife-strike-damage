@@ -1,32 +1,15 @@
 """
-Step 7 - Recalibration on the 2024 validation year.
-
-The models were trained on 2016-23 (damage rate 7.4%) but are applied to
-2025-26 (5.5%), so their probabilities over-predict (step 5, E3b). Three
-standard corrections are fitted on the 2024 validation year ONLY and applied
-unchanged to the test years:
-
-  prior_shift : Bayes prior-shift (label-shift) correction. The model's
-                log-odds are moved by log-odds(2024 rate) - log-odds(train rate).
-                It is pre-specified as the primary method because the
-                documented cause of the over-prediction is a falling damage
-                rate (Saerens, Latinne and Decaestecker, 2002).
-  platt       : logistic regression of the label on the model's log-odds.
-  isotonic    : monotone, piecewise-constant mapping (isotonic regression).
-
-Ranking is unchanged by prior_shift and platt (monotone transformations),
-and almost unchanged by isotonic (it creates ties). The test years are not
-used to choose between methods; all three are reported.
-
-Metrics on 2025-26: Brier score, mean predicted probability vs observed rate,
-expected calibration error (ECE, 10 quantile bins), PR-AUC, ROC-AUC. The
-change in Brier score gets a paired bootstrap 95% CI (same 1,000 resamples
-and seed as step 4).
-
+Training damage was 7.4% versus 5.5% in testing, leading to over-predicted
+probabilities.
+Fit all corrections on 2024 only, then apply unchanged to 2025-26; do not select methods
+on test data.
+prior_shift: pre-specified primary; adjust log-odds for the changed damage rate (Saerens
+et al., 2002).
+platt: fit logistic regression of the label on model log-odds.
+isotonic: fit a monotone, piecewise-constant probability mapping.
 Input : outputs/predictions/predictions_A.csv.gz, predictions_HGB.csv.gz
 Output: outputs/tables/07_recalibration.csv, 07_recalibration_by_year.csv
-
-Run from the repository root:  python src/07_recalibration.py   (~1 min)
+Run from the repository root: python src/07_recalibration.py (~1 min)
 """
 import numpy as np
 import pandas as pd

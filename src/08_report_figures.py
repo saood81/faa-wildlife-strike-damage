@@ -1,32 +1,14 @@
 """
-Step 8 - Report figure and the balanced-accuracy comparison with prior work.
-
-Uses only the saved predictions from step 3, so it runs in seconds and needs no
-refitting.
-
-1) Figure 2 of the report (fig2_report_pr_calibration.png):
-   (a) precision-recall curves for the six models on the test years 2025-26;
-   (b) reliability curves for RF before and after the prior-shift correction
-       fitted on 2024 (step 7), the gradient-boosting model and GNB.
-
-2) Balanced accuracy (08_balanced_accuracy.csv).
-   The best prior NWSD damage model (Misra, Toppo and Mendonca, 2022) is reported
-   as 78.81% *balanced* accuracy (as cited by Kim, Starkute and Mendonca, 2026).
-   Balanced accuracy = (recall + specificity) / 2, so unlike plain accuracy it
-   does not depend on the damage rate, which makes a like-for-like comparison
-   possible. It is still threshold-dependent, so we pick the threshold that
-   maximises balanced accuracy (Youden's J = recall + specificity - 1) on the
-   2024 validation year and apply it unchanged to 2025-26. 95% CIs come from
-   1,000 bootstrap resamples of the test rows (same seed as step 4).
-   For reference only, the "oracle" row shows the best balanced accuracy
-   achievable if the threshold were tuned on the test set itself (optimistic,
-   not a valid estimate).
-
+Produce report Figure 2 with test-year PR curves and reliability curves from saved
+predictions, without refitting.
+Report balanced accuracy for comparison with Misra et al. (2022), 78.81% (cited by Kim
+et al., 2026).
+Choose the Youden's J threshold on 2024 and apply unchanged to 2025-26.
+The test-tuned oracle row is optimistic and for reference only, not a valid estimate.
 Input : outputs/predictions/predictions_A.csv.gz, predictions_HGB.csv.gz (step 6)
 Output: outputs/figures/fig2_report_pr_calibration.png
         outputs/tables/08_balanced_accuracy.csv
-
-Run from the repository root:  python src/08_report_figures.py
+Run from the repository root: python src/08_report_figures.py
 """
 import matplotlib
 matplotlib.use("Agg")
@@ -62,7 +44,7 @@ y_va, y = valid["y"].to_numpy(), test["y"].to_numpy()
 pr_auc = {m: average_precision_score(y, test[m]) for m in MODELS}
 best = max(MODELS, key=pr_auc.get)
 
-# ------------------------------------------------------------ Figure 2 (report)
+# Figure 2 (report)
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(6.3, 2.9), gridspec_kw={"width_ratios": [1.15, 1]})
 for m in MODELS:
     prec, rec, _ = precision_recall_curve(y, test[m])
@@ -75,11 +57,10 @@ ax1.set_xlabel("Recall"); ax1.set_ylabel("Precision")
 ax1.set_title("(a) Precision-recall, test 2025-26")
 ax1.legend(title="Model (PR-AUC)", title_fontsize=6.5, frameon=False, fontsize=6.5, loc="upper right")
 
-# prior-shift correction (step 7): move log-odds by logit(2024 rate) - logit(training rate)
 def _logit(p):
     p = np.clip(p, 1e-6, 1 - 1e-6)
     return np.log(p / (1 - p))
-pi_tr = 5307 / 71509                       # training damage rate (Table 2)
+pi_tr = 5307 / 71509                       # Damage rate among verified training rows, 2016-23.
 shift = _logit(np.array([y_va.mean()]))[0] - _logit(np.array([pi_tr]))[0]
 rf_shifted = 1 / (1 + np.exp(-(_logit(test["RF"].to_numpy()) + shift)))
 curves = [("RF", test["RF"], COLORS["RF"], "-", "RF"),
@@ -101,7 +82,7 @@ fig.savefig(C.FIG_DIR / "fig2_report_pr_calibration.png")
 plt.close(fig)
 
 
-# ------------------------------------------------------------ balanced accuracy
+# balanced accuracy
 def youden_threshold(y_true, prob):
     fpr, tpr, thr = roc_curve(y_true, prob)
     return thr[np.argmax(tpr - fpr)]
@@ -129,7 +110,7 @@ for m in MODELS:
     lo, hi = np.percentile(ba, [2.5, 97.5])
     r["balanced_acc_ci"] = f"[{lo:.3f}, {hi:.3f}]"
     rows.append(r)
-    thr_o = youden_threshold(y, p)            # optimistic reference only
+    thr_o = youden_threshold(y, p)  # Reference only; test-set tuning makes this optimistic.
     o = {"model": m, "threshold_rule": "oracle: Youden J on test (reference only)",
          "threshold": round(float(thr_o), 4)}
     o.update({k: round(v, 4) for k, v in rates(y, p, thr_o).items()})

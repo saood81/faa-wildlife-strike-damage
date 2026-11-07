@@ -1,20 +1,14 @@
 """
-Step 2 - Exploratory figures for the report.
-
-Uses the TRAINING years only (2016-2023), so nothing about the 2024 validation
-or 2025-26 test data influences modelling choices. The one exception is
-Figure 1, which shows all years on purpose: it documents the drift that the
-temporal split is designed to expose.
-
-Input : data/processed/analytic.csv.gz  (from 01_prepare.py)
-Output: outputs/figures/fig1_volume_prevalence_by_year.png
-        outputs/figures/fig2_damage_rate_by_feature.png
+Create report figures using training years 2016-23; Figure 1 alone uses all years to
+show drift.
+Input : data/processed/analytic.csv.gz (from 01_prepare.py)
+Output: outputs/figures/fig1_volume_prevalence_by_year.png,
+        outputs/figures/fig2_damage_rate_by_feature.png,
         outputs/figures/fig3_missingness_vs_damage.png
-
-Run from the repository root:  python src/02_eda.py
+Run from the repository root: python src/02_eda.py
 """
 import matplotlib
-matplotlib.use("Agg")                     # draw to files, no window needed
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.patches import Patch
@@ -23,7 +17,7 @@ import config as C
 
 C.FIG_DIR.mkdir(parents=True, exist_ok=True)
 
-# ---- one consistent, print-friendly style for every figure
+# one consistent, print-friendly style for every figure
 BLUE, ORANGE, GREY = "#2a78d6", "#eb6834", "#a3a29c"
 INK, INK2 = "#0b0b0b", "#52514e"
 plt.rcParams.update({
@@ -41,9 +35,7 @@ ver = df[df["LABEL_VERIFIED"] == 1]
 train = ver[ver["SPLIT"] == "train"]
 y = C.TARGET
 
-# =========================================================== Figure 1
-# Two measures on two scales -> two stacked panels sharing the year axis
-# (never one chart with two y-axes).
+# Figure 1
 by_year = ver.groupby("INCIDENT_YEAR")[y].agg(n="size", rate="mean")
 split_of = ver.groupby("INCIDENT_YEAR")["SPLIT"].first()
 colors = split_of.map({"train": BLUE, "valid": ORANGE, "test": INK2})
@@ -69,8 +61,7 @@ a2.grid(axis="x", visible=False)
 fig.savefig(C.FIG_DIR / "fig1_volume_prevalence_by_year.png")
 plt.close(fig)
 
-# =========================================================== Figure 2
-# Damage rate by the strongest single predictors (training years).
+# Figure 2
 panels = [
     ("SIZE_ORD", "Bird size (pilot estimate)", {1: "Small", 2: "Medium", 3: "Large"}),
     ("AC_MASS", "Aircraft mass class", {1: "1 (<=2.25 t)", 2: "2", 3: "3", 4: "4", 5: "5 (>272 t)"}),
@@ -82,7 +73,7 @@ fig, axes = plt.subplots(2, 2, figsize=(6.3, 5.0))
 overall = 100 * train[y].mean()
 for ax, (col, title, labels) in zip(axes.ravel(), panels):
     g = train.groupby(train[col].astype("string").fillna("Not reported"))[y].agg(n="size", rate="mean")
-    g = g[g["n"] >= 100]                                     # hide categories too small to trust
+    g = g[g["n"] >= 100]  # Omit categories with too few records for reliable estimates.
     if labels:
         g.index = [labels.get(int(float(i)) if col != "TYPE_ENG" and i != "Not reported" else i, i)
                    for i in g.index]
@@ -106,8 +97,7 @@ fig.tight_layout()
 fig.savefig(C.FIG_DIR / "fig2_damage_rate_by_feature.png")
 plt.close(fig)
 
-# =========================================================== Figure 3
-# Informative missingness: damage rate when a field is filled in vs left blank.
+# Figure 3
 rows = []
 pretty = {"SPEED": "Speed", "NUM_SEEN_ORD": "Number of birds seen", "WARNED": "Pilot warned",
           "HEIGHT": "Height", "SKY": "Sky condition", "TIME_OF_DAY": "Light conditions",

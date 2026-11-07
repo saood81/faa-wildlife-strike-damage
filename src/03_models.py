@@ -1,27 +1,14 @@
 """
-Step 3 - Tune, fit and score the six models (feature set A).
-
-For every model:
-  1. Hyper-parameter tuning: grid search with stratified 5-fold
-     cross-validation on the TRAINING years (2016-23), scored by PR-AUC
-     (average precision).
-  2. The best settings are refitted on all training years.
-  3. Decision threshold: chosen on the VALIDATION year (2024) as the cut-off
-     that maximises F1. The test years are not used for any choice.
-  4. Damage probabilities are saved for validation and test (2025-26) rows;
-     04_evaluate.py turns them into metrics, curves and confidence intervals.
-
-The SVM (RBF kernel) is tuned and trained on a stratified 15,000-row
-subsample of the training years, because SVC training time grows with the
-square of the row count. Its scores are turned into probabilities with Platt
-(sigmoid) scaling, fitted by 3-fold cross-validation on the same subsample.
-
+Tune six feature-set A models by stratified 5-fold CV grid search on 2016-23, scored by
+PR-AUC.
+Refit the selected settings on all training years.
+Choose the maximum-F1 threshold on 2024; never use test years 2025-26 for selection.
+For SVM, use a stratified 15,000-row training subsample and Platt scaling with 3-fold
+CV.
 Input : data/processed/analytic.csv.gz
-Output: data/processed/models/<model>_A.joblib       (fitted pipelines; not stored in git)
-        outputs/tables/03_tuning_results.csv          (best settings + CV PR-AUC per model)
-        outputs/predictions/predictions_A.csv.gz      (probabilities for 2024-26 rows)
-
-Run from the repository root:  python src/03_models.py
+Output: data/processed/models/<model>_A.joblib, outputs/tables/03_tuning_results.csv,
+        outputs/predictions/predictions_A.csv.gz
+Run from the repository root: python src/03_models.py
 """
 import time
 import warnings
@@ -36,7 +23,8 @@ from sklearn.model_selection import GridSearchCV, StratifiedKFold, train_test_sp
 import config as C
 import pipeline as P
 
-warnings.filterwarnings("ignore", category=UserWarning)   # rare one-hot categories in some folds
+# Some folds contain rare one-hot categories.
+warnings.filterwarnings("ignore", category=UserWarning)
 
 MODEL_DIR = C.PROCESSED_DIR / "models"
 PRED_DIR = C.ROOT / "outputs" / "predictions"
@@ -45,10 +33,10 @@ for d in (MODEL_DIR, PRED_DIR, C.TABLE_DIR):
 
 
 def best_f1_threshold(y_true, prob):
-    """Cut-off on the probability that gives the highest F1 score."""
     prec, rec, thr = precision_recall_curve(y_true, prob)
     f1 = 2 * prec * rec / np.clip(prec + rec, 1e-12, None)
-    i = int(np.nanargmax(f1[:-1]))           # last point has no threshold
+    # Exclude the final point because it has no corresponding threshold.
+    i = int(np.nanargmax(f1[:-1]))
     return float(thr[i])
 
 
@@ -68,13 +56,12 @@ for name, (estimator, grid) in P.model_specs().items():
     if name == "SVM":
         X_fit, _, y_fit, _ = train_test_split(X_tr, y_tr, train_size=P.SVM_SUBSAMPLE,
                                               stratify=y_tr, random_state=C.RANDOM_STATE)
-    # Models that already use both CPU cores internally run their CV folds one at a time.
     n_jobs = 1 if name in ("RF", "KNN") else -1
     search = GridSearchCV(P.make_pipeline(estimator), grid, scoring="average_precision",
                           cv=cv, n_jobs=n_jobs, refit=True)
     search.fit(X_fit, y_fit)
     model = search.best_estimator_
-    if name == "SVM":   # SVC gives distances, not probabilities -> Platt scaling
+    if name == "SVM":   # Apply Platt scaling to convert SVC distances into probabilities.
         model = CalibratedClassifierCV(search.best_estimator_, method="sigmoid", cv=3)
         model.fit(X_fit, y_fit)
 

@@ -1,27 +1,13 @@
 """
-Step 4 - Evaluate the six models on the test years (2025-26).
-
-Metrics (all computed at the real damage rate - the test set is NOT rebalanced):
-  PR-AUC (primary)   area under the precision-recall curve; a useless model
-                     scores about the damage rate (~0.055), a perfect one 1.0
-  ROC-AUC            probability a damaged strike is ranked above an undamaged one
-  Brier score        mean squared error of the probabilities (lower = better
-                     calibrated and sharper)
-  Recall, precision, F1, balanced accuracy - at the threshold chosen on 2024
-  Calibration-in-the-large: mean predicted probability vs actual damage rate
-
-Uncertainty: 1,000 bootstrap resamples of the test rows give 95% percentile
-confidence intervals. The same resamples are used for every model, so the
-difference in PR-AUC between each model and the best one also gets a CI
-(paired bootstrap): if that CI excludes 0, the gap is unlikely to be chance.
-
+Evaluate six models on 2025-26 at the original damage rate, without rebalancing.
+Use 1,000 test-row bootstrap resamples for 95% CIs; pair resamples for PR-AUC gaps to
+the best model.
 Input : outputs/predictions/predictions_A.csv.gz, data/processed/models/*_A.joblib
 Output: outputs/tables/04_test_metrics.csv, 04_confusion_matrices.csv,
-        04_permutation_importance.csv
+        04_permutation_importance.csv;
         outputs/figures/fig4_pr_curves.png, fig5_calibration.png,
         fig6_permutation_importance.png
-
-Run from the repository root:  python src/04_evaluate.py
+Run from the repository root: python src/04_evaluate.py
 """
 import joblib
 import matplotlib
@@ -70,7 +56,7 @@ def metric_set(y_true, prob, thr):
             "balanced_acc": balanced_accuracy_score(y_true, hard)}
 
 
-# ------------------------------------------------------------ point estimates + bootstrap
+# point estimates + bootstrap
 rng = np.random.default_rng(C.RANDOM_STATE)
 boot_idx = [rng.integers(0, len(y), len(y)) for _ in range(N_BOOT)]
 
@@ -99,7 +85,7 @@ print(metrics[["model", "pr_auc", "pr_auc_ci", "roc_auc", "brier", "recall", "pr
                "f1", "balanced_acc", "mean_predicted_prob"]].to_string(index=False))
 print(f"No-skill PR-AUC (= test damage rate): {y.mean():.3f}.  Best model: {best}")
 
-# ------------------------------------------------------------ confusion matrices
+# confusion matrices
 cm_rows = []
 for m in MODELS:
     tn, fp, fn, tp = confusion_matrix(y, (test[m] >= thresholds[m]).astype(int)).ravel()
@@ -107,7 +93,7 @@ for m in MODELS:
                     "flagged_per_1000_strikes": round(1000 * (tp + fp) / len(y), 1)})
 pd.DataFrame(cm_rows).to_csv(C.TABLE_DIR / "04_confusion_matrices.csv", index=False)
 
-# ------------------------------------------------------------ Figure 4: PR curves
+# Figure 4: PR curves
 fig, ax = plt.subplots(figsize=(6.3, 4.2))
 for m in MODELS:
     prec, rec, _ = precision_recall_curve(y, test[m])
@@ -124,7 +110,7 @@ ax.legend(frameon=False, fontsize=7.5, loc="upper right")
 fig.savefig(C.FIG_DIR / "fig4_pr_curves.png")
 plt.close(fig)
 
-# ------------------------------------------------------------ Figure 5: calibration
+# Figure 5: calibration
 fig, axes = plt.subplots(2, 3, figsize=(6.3, 4.4), sharex=True, sharey=True)
 for ax, m in zip(axes.ravel(), MODELS):
     frac, mean_p = calibration_curve(y, test[m], n_bins=10, strategy="quantile")
@@ -142,9 +128,7 @@ fig.tight_layout()
 fig.savefig(C.FIG_DIR / "fig5_calibration.png")
 plt.close(fig)
 
-# ------------------------------------------------------------ Figure 6: permutation importance
-# Shuffle one input column at a time in the test data and measure how much
-# PR-AUC drops. A big drop = the model relies on that column.
+# Figure 6: permutation importance
 df = P.load_data()
 X_te, y_te = P.get_xy(df, "test")
 model = joblib.load(C.PROCESSED_DIR / "models" / f"{best}_A.joblib")["model"]
